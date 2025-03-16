@@ -1,5 +1,5 @@
 [package]
-name = "gentoo-parsers"
+name = "gentoo-utils"
 version = "0.1.0"
 edition = "2021"
 

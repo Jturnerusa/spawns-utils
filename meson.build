@@ -1,5 +1,5 @@
 project(
-    'gentoo-parsers',
+    'gentoo-utils',
     'rust',
     meson_version: '>=1.6.1',
     default_options: {'rust_std': '2021'},
@@ -11,7 +11,7 @@ nom = dependency('nom-8-rs')
 
 sources = files('src/lib.rs', 'src/vdb/mod.rs')
 
-gentoo_parsers = static_library('gentoo_parsers', sources, dependencies: [nom])
+gentoo_parsers = static_library('gentoo_utils', sources, dependencies: [nom])
 
 tests = files('tests/vdb.rs')
 
