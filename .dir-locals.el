@@ -11,4 +11,7 @@
                   (eval . (add-hook 'before-save-hook 'fmt-current-buffer nil t))
                   (eval . (add-hook 'eglot-managed-mode-hook (lambda ()
                                                                (eglot-inlay-hints-mode -1))
-                                    nil t)))))
+                                    nil t))))
+ (meson-mode . ((fmt-executable . "meson")
+                (fmt-args . ("format"))
+                (eval . (add-hook 'before-save-hook 'fmt-current-buffer nil t)))))
