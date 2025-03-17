@@ -11,7 +11,7 @@ pub enum Error<'a> {
     Incomplete,
 }
 
-pub fn contents(input: &str) -> Result<Vec<Content>, Error> {
+pub fn parse_contents(input: &str) -> Result<Vec<Content>, Error> {
     use nom::{branch::alt, multi::many0};
 
     match many0(alt((
