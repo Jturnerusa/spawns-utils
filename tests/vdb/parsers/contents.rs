@@ -1,7 +1,7 @@
 use core::{assert_eq, convert::From};
 use std::path::PathBuf;
 
-use gentoo_utils::vdb::parsers::contents::{contents, Content, Dir, Obj, Sym};
+use gentoo_utils::vdb::{Content, Dir, Obj, Sym};
 
 fn test_contents() {
     let input = "obj /usr/share/alsa/ucm2/NXP/iMX8/Librem_5_Devkit/Librem 5 Devkit.conf 6c0d51586d94c272b160eb7ba6c61331 1739589188\ndir /a/path to something\nsym /a/path to something -> ../another path 102021\n";
@@ -24,7 +24,7 @@ fn test_contents() {
         }),
     ];
 
-    let contents = contents(input).unwrap();
+    let contents = gentoo_utils::vdb::parsers::contents::contents(input).unwrap();
 
     for (received, expected) in contents.iter().zip(expected) {
         assert_eq!(*received, expected);
