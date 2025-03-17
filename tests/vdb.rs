@@ -1,5 +1,5 @@
 use core::{assert_eq, convert::From};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use gentoo_utils::vdb;
 

@@ -1,4 +1,4 @@
-use core::{str, unreachable};
+use core::str;
 use std::path::PathBuf;
 
 use nom::{AsChar, Parser};
