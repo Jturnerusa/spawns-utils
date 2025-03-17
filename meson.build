@@ -13,7 +13,7 @@ sources = files('src/lib.rs', 'src/vdb/mod.rs')
 
 gentoo_parsers = static_library('gentoo_utils', sources, dependencies: [nom])
 
-tests = files('tests/vdb.rs')
+tests = files('tests/vdb/parsers/contents.rs')
 
 foreach t : tests
     exe_name = fs.stem(t)
