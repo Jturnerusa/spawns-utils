@@ -24,7 +24,7 @@ fn test_contents() {
         }),
     ];
 
-    let contents = gentoo_utils::vdb::parsers::contents::parse_contents(input).unwrap();
+    let (_, contents) = gentoo_utils::vdb::parsers::contents::contents(input).unwrap();
 
     for (received, expected) in contents.iter().zip(expected) {
         assert_eq!(*received, expected);

@@ -3,7 +3,10 @@ use std::path::PathBuf;
 
 use nom::{AsChar, Parser};
 
-use crate::vdb::{Content, Dir, Obj, Sym};
+use crate::{
+    vdb::{Content, Dir, Obj, Sym},
+    ParseResult,
+};
 
 #[derive(Clone, Debug)]
 pub enum Error<'a> {
@@ -11,23 +14,18 @@ pub enum Error<'a> {
     Incomplete,
 }
 
-pub fn parse_contents(input: &str) -> Result<Vec<Content>, Error> {
+pub fn contents(input: &str) -> ParseResult<Vec<Content>> {
     use nom::{branch::alt, multi::many0};
 
-    match many0(alt((
+    many0(alt((
         obj.map(Content::Obj),
         dir.map(Content::Dir),
         sym.map(Content::Sym),
     )))
     .parse(input)
-    {
-        Ok((_, contents)) => Ok(contents),
-        Err(nom::Err::Error(e) | nom::Err::Failure(e)) => Err(Error::Failure(e.input)),
-        Err(nom::Err::Incomplete(_)) => Err(Error::Incomplete),
-    }
 }
 
-fn md5(input: &str) -> nom::IResult<&str, String> {
+fn md5(input: &str) -> ParseResult<String> {
     use nom::bytes::complete::take_while_m_n;
 
     take_while_m_n(32, 32, |c: char| c.is_hex_digit())
@@ -35,7 +33,7 @@ fn md5(input: &str) -> nom::IResult<&str, String> {
         .parse(input)
 }
 
-fn size(input: &str) -> nom::IResult<&str, u64> {
+fn size(input: &str) -> ParseResult<u64> {
     use nom::bytes::take_while1;
 
     take_while1(|c: char| c.is_ascii_digit())
@@ -43,7 +41,7 @@ fn size(input: &str) -> nom::IResult<&str, u64> {
         .parse(input)
 }
 
-fn obj(input: &str) -> nom::IResult<&str, Obj> {
+fn obj(input: &str) -> ParseResult<Obj> {
     use nom::{
         bytes::complete::{tag, take},
         combinator::peek,
@@ -73,7 +71,7 @@ fn obj(input: &str) -> nom::IResult<&str, Obj> {
         .parse(input)
 }
 
-fn dir(input: &str) -> nom::IResult<&str, Dir> {
+fn dir(input: &str) -> ParseResult<Dir> {
     use nom::{
         bytes::complete::{tag, take},
         combinator::peek,
@@ -97,7 +95,7 @@ fn dir(input: &str) -> nom::IResult<&str, Dir> {
         .parse(input)
 }
 
-fn sym(input: &str) -> nom::IResult<&str, Sym> {
+fn sym(input: &str) -> ParseResult<Sym> {
     use nom::{
         bytes::complete::{tag, take},
         combinator::peek,
