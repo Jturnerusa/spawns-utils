@@ -9,6 +9,6 @@ fs = import('fs')
 
 nom = dependency('nom-8-rs')
 
-static_library('gentoo_utils', 'src/lib.rs', dependencies: [nom])
+gentoo_utils = static_library('gentoo_utils', 'src/lib.rs', dependencies: [nom])
 
 subdir('tests')
