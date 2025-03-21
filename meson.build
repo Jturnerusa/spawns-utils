@@ -9,8 +9,6 @@ fs = import('fs')
 
 nom = dependency('nom-8-rs')
 
-sources = files('src/lib.rs', 'src/vdb/mod.rs')
-
-gentoo_parsers = static_library('gentoo_utils', sources, dependencies: [nom])
+static_library('gentoo_utils', 'src/lib.rs', dependencies: [nom])
 
 subdir('tests')
