@@ -6,9 +6,10 @@ project(
 )
 
 fs = import('fs')
+rust = import('rust')
 
 nom = dependency('nom-8-rs')
 
 gentoo_utils = static_library('gentoo_utils', 'src/lib.rs', dependencies: [nom])
 
-subdir('tests')
+rust.test('gentoo_utils', gentoo_utils)
