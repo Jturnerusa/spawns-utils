@@ -1,9 +1,9 @@
 use core::str;
-use std::path::PathBuf;
 
 use nom::{AsChar, Parser};
 
 use crate::{
+    parser_utils::lookahead,
     vdb::{Content, Dir, Obj, Sym},
     ParseResult,
 };
@@ -42,24 +42,10 @@ fn size(input: &str) -> ParseResult<u64> {
 }
 
 fn obj(input: &str) -> ParseResult<Obj> {
-    use nom::{
-        bytes::complete::{tag, take},
-        combinator::peek,
-        multi::many_till,
-        sequence::terminated,
-    };
+    use nom::{bytes::complete::tag, sequence::terminated};
 
-    let path = many_till(
-        take(1usize),
-        peek((tag(" "), md5, tag(" "), size, tag("\n"))),
-    )
-    .map(|(chars, ..)| {
-        chars
-            .iter()
-            .flat_map(|slice| slice.chars())
-            .collect::<String>()
-            .into()
-    });
+    let path = lookahead((tag(" "), md5, tag(" "), size, tag("\n")))
+        .map(|result: &str| result.to_string().into());
 
     (
         terminated(tag("obj"), tag(" ")),
@@ -72,20 +58,9 @@ fn obj(input: &str) -> ParseResult<Obj> {
 }
 
 fn dir(input: &str) -> ParseResult<Dir> {
-    use nom::{
-        bytes::complete::{tag, take},
-        combinator::peek,
-        multi::many_till,
-        sequence::terminated,
-    };
+    use nom::{bytes::complete::tag, sequence::terminated};
 
-    let path = many_till(take::<usize, &str, _>(1usize), peek(tag("\n"))).map(|(chars, ..)| {
-        chars
-            .iter()
-            .flat_map(|slice| slice.chars())
-            .collect::<String>()
-            .into()
-    });
+    let path = lookahead(tag("\n")).map(|result: &str| result.to_string().into());
 
     (
         terminated(tag("dir"), tag(" ")),
@@ -96,24 +71,13 @@ fn dir(input: &str) -> ParseResult<Dir> {
 }
 
 fn sym(input: &str) -> ParseResult<Sym> {
-    use nom::{
-        bytes::complete::{tag, take},
-        combinator::peek,
-        multi::many_till,
-        sequence::terminated,
-    };
+    use nom::{bytes::complete::tag, sequence::terminated};
 
-    let dest = || {
-        many_till(take(1usize), peek((tag(" "), size, tag("\n")))).map(|(chars, ..)| {
-            PathBuf::from(chars.iter().flat_map(|s| s.chars()).collect::<String>())
-        })
-    };
+    let dest =
+        || lookahead((tag(" "), size, tag("\n"))).map(|result: &str| result.to_string().into());
 
-    let src = many_till(
-        take(1usize),
-        peek((tag(" -> "), dest(), tag(" "), size, tag("\n"))),
-    )
-    .map(|(chars, ..)| PathBuf::from(chars.iter().flat_map(|s| s.chars()).collect::<String>()));
+    let src = lookahead((tag(" "), dest(), tag(" "), size, tag("\n")))
+        .map(|result: &str| result.to_string().into());
 
     (
         terminated(tag::<&str, &str, nom::error::Error<&str>>("sym"), tag(" ")),
@@ -129,6 +93,8 @@ fn sym(input: &str) -> ParseResult<Sym> {
 mod tests {
 
     use super::*;
+
+    use std::path::PathBuf;
 
     #[test]
     fn test_contents() {
