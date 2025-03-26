@@ -1,8 +1,43 @@
-use core::clone::Clone;
+use core::{clone::Clone, fmt};
 
-use nom::{bytes::take, combinator::peek, error::ParseError, Input, Mode, Parser};
+use nom::{
+    bytes::{take, take_while_m_n},
+    combinator::peek,
+    error::ParseError,
+    Input, Mode, Parser,
+};
+
+pub struct Debug<F>(F);
 
 pub struct Lookahead<F>(F);
+
+impl<I, O, E, F> Parser<I> for Debug<F>
+where
+    I: Input + fmt::Debug,
+    O: fmt::Debug,
+    E: ParseError<I>,
+    F: Parser<I, Output = O, Error = E>,
+{
+    type Output = F::Output;
+    type Error = F::Error;
+
+    fn process<OM: nom::OutputMode>(
+        &mut self,
+        input: I,
+    ) -> nom::PResult<OM, I, Self::Output, Self::Error> {
+        eprintln!("input: {:?}", input);
+
+        match self.0.process::<OM>(input) {
+            Ok((rest, result)) => {
+                eprintln!("rest: {:?}", rest);
+                eprintln!();
+
+                Ok((rest, result))
+            }
+            e => e,
+        }
+    }
+}
 
 impl<I, E, F> Parser<I> for Lookahead<F>
 where
@@ -35,6 +70,16 @@ where
     }
 }
 
+// not sure why we cant return impl Parser here
+pub fn debug<I, O, E, F>(parser: F) -> Debug<F>
+where
+    I: Input + fmt::Debug,
+    E: ParseError<I>,
+    F: Parser<I, Output = O, Error = E>,
+{
+    Debug(parser)
+}
+
 pub fn lookahead<I, E, F>(parser: F) -> impl Parser<I, Output = I, Error = E>
 where
     I: Input + Clone,
@@ -42,6 +87,15 @@ where
     F: Parser<I, Error = E>,
 {
     Lookahead(peek(parser))
+}
+
+pub fn take_1_if<I, E, F>(f: F) -> impl Parser<I, Output = I, Error = E>
+where
+    I: Input,
+    F: Fn(I::Item) -> bool,
+    E: ParseError<I>,
+{
+    take_while_m_n(1, 1, f)
 }
 
 #[cfg(test)]
