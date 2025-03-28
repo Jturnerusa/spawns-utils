@@ -1,11 +1,13 @@
 use core::{clone::Clone, fmt};
 
 use nom::{
-    bytes::{take, take_while_m_n},
+    bytes::{complete::take_while1, take, take_while_m_n},
     combinator::peek,
     error::ParseError,
     Input, Mode, Parser,
 };
+
+use crate::ParseResult;
 
 pub struct Debug<F>(F);
 
@@ -96,6 +98,10 @@ where
     E: ParseError<I>,
 {
     take_while_m_n(1, 1, f)
+}
+
+pub fn whitespace(input: &str) -> ParseResult<&str> {
+    take_while1(|c: char| c.is_ascii_whitespace()).parse_complete(input)
 }
 
 #[cfg(test)]
