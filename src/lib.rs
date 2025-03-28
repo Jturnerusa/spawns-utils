@@ -1,4 +1,5 @@
 pub mod atom;
+pub mod depend;
 pub mod parser_utils;
 pub mod useflag;
 pub mod vdb;
