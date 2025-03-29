@@ -1,8 +1,8 @@
-use core::{clone::Clone, fmt};
+use core::{clone::Clone, fmt, unreachable};
 
 use nom::{
     bytes::{complete::take_while1, take, take_while_m_n},
-    combinator::peek,
+    combinator::{complete, peek},
     error::ParseError,
     Input, Mode, Parser,
 };
@@ -12,6 +12,8 @@ use crate::ParseResult;
 pub struct Debug<F>(F);
 
 pub struct Lookahead<F>(F);
+
+pub struct Search<F>(F);
 
 impl<I, O, E, F> Parser<I> for Debug<F>
 where
@@ -104,6 +106,15 @@ pub fn whitespace(input: &str) -> ParseResult<&str> {
     take_while1(|c: char| c.is_ascii_whitespace()).parse_complete(input)
 }
 
+pub fn search<I, E, F>(parser: F) -> impl Parser<I, Output = I, Error = E>
+where
+    I: Input + Clone,
+    E: ParseError<I>,
+    F: Parser<I, Error = E>,
+{
+    complete(lookahead(parser))
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -136,5 +147,24 @@ mod tests {
             result,
             "/usr/share/alsa/ucm2/NXP/iMX8/Librem_5_Devkit/Librem 5 Devkit.conf"
         );
+    }
+
+    #[test]
+    fn test_search() {
+        let input = r#"
+DESCRIPTION=an example description
+DEPEND=app-editors/emacs-31.0.1
+"#;
+
+        let (rest, result) = search((
+            tag::<&str, &str, nom::error::Error<&str>>("\nDEPEND="),
+            take_while1(|c: char| !c.is_ascii_whitespace()),
+        ))
+        .parse_complete(input)
+        .unwrap();
+
+        assert_eq!(result, "\nDESCRIPTION=an example description");
+
+        assert_eq!(rest, "\nDEPEND=app-editors/emacs-31.0.1\n");
     }
 }
