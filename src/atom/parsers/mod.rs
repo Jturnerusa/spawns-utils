@@ -101,6 +101,7 @@ fn slot(input: &str) -> ParseResult<Slot> {
                 }),
             ))
             .map(|result: &str| result.to_string()),
+            recognize(tag("*")).map(|_| String::from("*")),
             peek(tag("=")).map(|_| String::new()),
         )))
     };
@@ -137,8 +138,9 @@ fn version_operator(input: &str) -> ParseResult<VersionOperator> {
     let lt_eq = tag("<=").map(|_| VersionOperator::LtEq);
     let gt = tag(">").map(|_| VersionOperator::Gt);
     let gt_eq = tag(">=").map(|_| VersionOperator::GtEq);
+    let roughly = tag("~").map(|_| VersionOperator::Roughly);
 
-    alt((lt_eq, gt_eq, eq, lt, gt)).parse_complete(input)
+    alt((lt_eq, gt_eq, eq, lt, gt, roughly)).parse_complete(input)
 }
 
 fn version_number(input: &str) -> ParseResult<VersionNumber> {

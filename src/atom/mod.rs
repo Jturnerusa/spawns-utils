@@ -17,6 +17,7 @@ pub enum VersionOperator {
     LtEq,
     Gt,
     GtEq,
+    Roughly,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
