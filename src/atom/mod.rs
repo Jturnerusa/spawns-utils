@@ -1,6 +1,10 @@
 pub mod parsers;
 
-use core::iter::ExactSizeIterator;
+use core::{
+    fmt::{self, Display},
+    iter::ExactSizeIterator,
+    write,
+};
 
 use crate::useflag::UseDep;
 
@@ -149,4 +153,161 @@ impl Atom {
     pub fn usedeps(&self) -> impl ExactSizeIterator<Item = &UseDep> {
         self.usedeps.iter()
     }
+}
+
+impl Display for Blocker {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Strong => write!(f, "!!"),
+            Self::Weak => write!(f, "!"),
+        }
+    }
+}
+
+impl Display for VersionOperator {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Eq => write!(f, "="),
+            Self::Lt => write!(f, "<"),
+            Self::Gt => write!(f, ">"),
+            Self::LtEq => write!(f, "<="),
+            Self::GtEq => write!(f, ">="),
+            Self::Roughly => write!(f, "~"),
+        }
+    }
+}
+
+impl Display for Category {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for Name {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for VersionNumber {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for SlotOperator {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Eq => write!(f, "="),
+        }
+    }
+}
+
+impl Display for Slot {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.primary)?;
+
+        if let Some(subslot) = self.sub.as_ref() {
+            write!(f, "/{}", subslot)?;
+        }
+
+        if let Some(operator) = self.operator.as_ref() {
+            write!(f, "{}", operator)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Display for VersionSuffixKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Alpha => write!(f, "alpha"),
+            Self::Beta => write!(f, "beta"),
+            Self::Pre => write!(f, "pre"),
+            Self::Rc => write!(f, "rc"),
+            Self::P => write!(f, "p"),
+        }
+    }
+}
+
+impl Display for VersionSuffix {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.kind)?;
+
+        if let Some(number) = self.number.as_ref() {
+            write!(f, "{}", number)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        intersperse(self.numbers.iter(), ".", f)?;
+
+        if let Some(letter) = self.letter.as_ref() {
+            write!(f, "{}", letter)?;
+        }
+
+        if !self.suffixes.is_empty() {
+            write!(f, "_")?;
+            intersperse(self.suffixes.iter(), "_", f)?;
+        }
+
+        if let Some(revision) = self.revision.as_ref() {
+            write!(f, "-r{}", revision.get())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Display for Atom {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(blocker) = self.blocker {
+            write!(f, "{}", blocker)?;
+        }
+
+        if let Some(version_operator) = self.version_operator.as_ref() {
+            write!(f, "{}", version_operator)?;
+        }
+
+        write!(f, "{}/{}", self.category, self.name)?;
+
+        if let Some(version) = self.version.as_ref() {
+            write!(f, "-{}", version)?;
+        }
+
+        if let Some(slot) = self.slot.as_ref() {
+            write!(f, ":{}", slot)?;
+        }
+
+        if !self.usedeps.is_empty() {
+            write!(f, "[")?;
+            intersperse(self.usedeps.iter(), ",", f)?;
+            write!(f, "]")?;
+        }
+
+        Ok(())
+    }
+}
+
+fn intersperse(
+    iter: impl ExactSizeIterator<Item = impl Display>,
+    separator: &str,
+    f: &mut fmt::Formatter,
+) -> fmt::Result {
+    let len = iter.len();
+
+    for (i, item) in iter.enumerate() {
+        write!(f, "{}", item)?;
+
+        if i < len - 1 {
+            write!(f, "{}", separator)?;
+        }
+    }
+
+    Ok(())
 }

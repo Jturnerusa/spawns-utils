@@ -284,15 +284,11 @@ mod tests {
 
     #[test]
     fn test_atom() {
-        let input = "!!>=cat/pkg-1.0.0v_alpha1_p20250326-r1:primary/sub=[?a(+),-b(-),c?]";
+        let input = "!!>=cat/pkg-1.0.0v_alpha1_p20250326-r1:primary/sub=[!a(+),-b(-)=,c?]";
 
         let (_, atom) = atom(input).unwrap();
 
-        assert_eq!(atom.category().get(), "cat");
-
-        assert_eq!(atom.name().get(), "pkg");
-
-        assert!(atom.version.is_some());
+        assert_eq!(atom.to_string(), input);
     }
 
     #[test]

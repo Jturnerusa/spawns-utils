@@ -1,3 +1,6 @@
+use core::{fmt, write};
+use std::fmt::Display;
+
 pub mod parsers;
 
 #[derive(Clone, Debug)]
@@ -45,5 +48,58 @@ impl UseDep {
 
     pub fn operator(&self) -> Option<Operator> {
         self.3
+    }
+}
+
+impl Display for UseFlag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for Negate {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Minus => write!(f, "-"),
+            Self::Exclamation => write!(f, "!"),
+        }
+    }
+}
+
+impl Display for Sign {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Plus => write!(f, "(+)"),
+            Self::Minus => write!(f, "(-)"),
+        }
+    }
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Equal => write!(f, "="),
+            Self::Question => write!(f, "?"),
+        }
+    }
+}
+
+impl Display for UseDep {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(negate) = self.0 {
+            write!(f, "{}", negate)?;
+        }
+
+        write!(f, "{}", self.1)?;
+
+        if let Some(sign) = self.2 {
+            write!(f, "{}", sign)?;
+        }
+
+        if let Some(operator) = self.3 {
+            write!(f, "{}", operator)?;
+        }
+
+        Ok(())
     }
 }
