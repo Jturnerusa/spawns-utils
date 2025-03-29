@@ -9,8 +9,15 @@ pub enum Conditional {
 }
 
 #[derive(Clone, Debug)]
+pub enum UseRequirement {
+    Negative(UseFlag),
+    Positive(UseFlag),
+}
+
+#[derive(Clone, Debug)]
 pub enum Expr {
     Atom(Atom),
+    UseRequirement(UseRequirement),
     AllOf(Vec<Expr>),
     AnyOf(Vec<Expr>),
     OneOf(Vec<Expr>),

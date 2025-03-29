@@ -10,7 +10,7 @@ use crate::{
     atom::parsers::atom, parser_utils::whitespace, useflag::parsers::useflag, ParseResult,
 };
 
-use super::{Conditional, Expr};
+use super::{Conditional, Expr, UseRequirement};
 
 pub fn exprs(input: &str) -> ParseResult<Vec<Expr>> {
     separated_list1(whitespace, expr).parse(input)
@@ -27,12 +27,21 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
 
     let atom = atom.map(Expr::Atom);
 
-    alt((atom, conditional, any_of, one_of, all_of)).parse_complete(input)
+    let use_requirement = use_requirement.map(Expr::UseRequirement);
+
+    alt((atom, conditional, use_requirement, any_of, one_of, all_of)).parse_complete(input)
 }
 
 fn conditional(input: &str) -> ParseResult<Conditional> {
     let negative = delimited(tag("!"), useflag, tag("?")).map(Conditional::Negative);
     let positive = terminated(useflag, tag("?")).map(Conditional::Positive);
+
+    alt((negative, positive)).parse_complete(input)
+}
+
+fn use_requirement(input: &str) -> ParseResult<UseRequirement> {
+    let negative = preceded(tag("!"), useflag).map(UseRequirement::Negative);
+    let positive = useflag.map(UseRequirement::Positive);
 
     alt((negative, positive)).parse_complete(input)
 }
