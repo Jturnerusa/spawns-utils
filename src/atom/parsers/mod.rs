@@ -22,7 +22,7 @@ use super::{
 
 pub fn category(input: &str) -> ParseResult<Category> {
     recognize((
-        take_1_if(|c: char| c.is_ascii_alphanumeric()),
+        take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
         take_while1(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | '+')),
     ))
     .map(|input: &str| Category(input.to_string()))
@@ -31,12 +31,12 @@ pub fn category(input: &str) -> ParseResult<Category> {
 
 pub fn name(input: &str) -> ParseResult<Name> {
     recognize((
-        take_1_if(|c: char| c.is_ascii_alphanumeric()),
+        take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
         lookahead(alt((
             eof,
             recognize(preceded(tag("-"), version)),
             recognize(not(take_1_if(|c: char| {
-                c.is_ascii_alphanumeric() || matches!(c, '-' | '_')
+                c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+')
             }))),
         ))),
     ))
