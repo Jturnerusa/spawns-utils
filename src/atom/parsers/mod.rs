@@ -11,7 +11,7 @@ use nom::{
 
 use crate::{
     atom::{Atom, Category, VersionSuffix},
-    parser_utils::{ignore, search, take_1_if},
+    parser_utils::{ignore, search, take_1_if, uncut},
     useflag::parsers::usedep,
     ParseResult,
 };
@@ -36,9 +36,9 @@ pub fn name(input: &str) -> ParseResult<Name> {
             search(alt((
                 ignore(eof),
                 ignore((
-                    preceded(tag("-"), version),
+                    preceded(tag("-"), uncut(version)),
                     not(search((
-                        preceded(tag("-"), version),
+                        preceded(tag("-"), uncut(version)),
                         alt((eof, search(tag(":")))),
                     ))),
                 )),
@@ -48,7 +48,7 @@ pub fn name(input: &str) -> ParseResult<Name> {
             ))),
         )),
         |result: &str| {
-            search((preceded(tag("-"), version), eof))
+            search((preceded(tag("-"), uncut(version)), eof))
                 .parse_complete(result)
                 .is_err()
         },
@@ -64,8 +64,8 @@ pub fn version(input: &str) -> ParseResult<Version> {
     (
         numbers,
         opt(take_1_if(|c: char| c.is_ascii_lowercase()).map(|s: &str| s.chars().next().unwrap())),
-        opt(preceded(tag("_"), suffixes)),
-        opt(preceded(tag("-"), version_revision)),
+        opt(preceded(tag("_"), cut(suffixes))),
+        opt(preceded(tag("-"), cut(version_revision))),
     )
         .map(|(numbers, letter, suffixes, revision)| Version {
             numbers,
@@ -86,7 +86,7 @@ pub fn atom(input: &str) -> ParseResult<Atom> {
         opt(preceded(tag(":"), slot)),
         opt(delimited(
             tag("["),
-            separated_list1(tag(","), usedep),
+            cut(separated_list1(tag(","), usedep)),
             tag("]"),
         )),
     )
