@@ -3,7 +3,7 @@ use core::iter::Iterator;
 use nom::{
     branch::alt,
     bytes::{complete::tag, take_while, take_while1},
-    combinator::{cut, eof, not, opt, peek, recognize, verify},
+    combinator::{cut, eof, not, opt, recognize, verify},
     multi::separated_list1,
     sequence::{delimited, preceded, terminated},
     Parser,
@@ -82,8 +82,8 @@ pub fn atom(input: &str) -> ParseResult<Atom> {
         opt(version_operator),
         terminated(category, tag("/")),
         name,
-        opt(preceded(tag("-"), version)),
-        opt(preceded(tag(":"), slot)),
+        opt(preceded(tag("-"), cut(version))),
+        opt(preceded(tag(":"), cut(slot))),
         opt(delimited(
             tag("["),
             cut(separated_list1(tag(","), usedep)),
@@ -105,37 +105,43 @@ pub fn atom(input: &str) -> ParseResult<Atom> {
 }
 
 fn slot(input: &str) -> ParseResult<Slot> {
-    let primary = {
-        cut(alt((
-            recognize((
-                take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
-                take_while(|c: char| {
-                    c.is_ascii_alphanumeric() || matches!(c, '+' | '_' | '.' | '-')
-                }),
-            ))
-            .map(|result: &str| result.to_string()),
-            recognize(tag("*")).map(|_| String::from("*")),
-            peek(tag("=")).map(|_| String::new()),
-        )))
+    let primary = || {
+        recognize((
+            take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
+            take_while(|c: char| c.is_ascii_alphanumeric() || matches!(c, '+' | '_' | '.' | '-')),
+        ))
+        .map(|result: &str| result.to_string())
     };
 
-    let subslot = cut(recognize((
-        take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
-        take_while(|c: char| c.is_ascii_alphanumeric() || matches!(c, '+' | '_' | '.' | '-')),
-    )))
-    .map(|result: &str| result.to_string());
+    let subslot = || {
+        recognize((
+            take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
+            take_while(|c: char| c.is_ascii_alphanumeric() || matches!(c, '+' | '_' | '.' | '-')),
+        ))
+        .map(|result: &str| result.to_string())
+    };
 
-    (
-        primary,
-        opt(preceded(tag::<&str, &str, _>("/"), subslot)),
-        opt(tag("=").map(|_| SlotOperator::Eq)),
+    let operator = || tag("=").map(|_| SlotOperator::Eq);
+
+    let slot = (
+        primary(),
+        opt(preceded(tag("/"), cut(subslot()))),
+        opt(operator()),
     )
         .map(|(primary, sub, operator)| Slot {
             primary,
             sub,
             operator,
-        })
-        .parse_complete(input)
+        });
+
+    let wildcard =
+        (tag("*"), not((tag("/"), subslot())), opt(operator())).map(|(_, _, operator)| Slot {
+            primary: String::from("*"),
+            sub: None,
+            operator,
+        });
+
+    alt((slot, wildcard)).parse_complete(input)
 }
 
 fn blocker(input: &str) -> ParseResult<Blocker> {
@@ -325,5 +331,12 @@ mod tests {
         let (_, atom) = atom(input).unwrap();
 
         assert_eq!(atom.name().get(), "bar-2-baz");
+    }
+
+    #[test]
+    fn test_atom_with_star_in_non_empty_slot() {
+        let input = "foo/bar-1.0.0:*/subslot";
+
+        assert!(atom(input).is_err());
     }
 }
