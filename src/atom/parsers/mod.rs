@@ -317,4 +317,13 @@ mod tests {
 
         assert_eq!(atom.to_string(), input);
     }
+
+    #[test]
+    fn test_atom_with_version_in_name() {
+        let input = "foo/bar-2-baz-1.0.0";
+
+        let (_, atom) = atom(input).unwrap();
+
+        assert_eq!(atom.name().get(), "bar-2-baz");
+    }
 }
