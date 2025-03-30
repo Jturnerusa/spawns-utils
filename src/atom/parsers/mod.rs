@@ -11,7 +11,7 @@ use nom::{
 
 use crate::{
     atom::{Atom, Category, VersionSuffix},
-    parser_utils::{debug, ignore, search, take_1_if},
+    parser_utils::{ignore, search, take_1_if},
     useflag::parsers::usedep,
     ParseResult,
 };
@@ -48,7 +48,7 @@ pub fn name(input: &str) -> ParseResult<Name> {
             ))),
         )),
         |result: &str| {
-            debug(search((preceded(tag("-"), version), eof)))
+            search((preceded(tag("-"), version), eof))
                 .parse_complete(result)
                 .is_err()
         },
