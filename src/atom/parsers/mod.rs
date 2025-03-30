@@ -311,7 +311,7 @@ mod tests {
 
     #[test]
     fn test_cursed_atom() {
-        let input = "!!>=_.+-0-/_-test-T-123_beta1_-4a-6+-_p--1.00.02b_alpha3_pre_p4-r5:*/_-+6-9=[test(+),test(-)]";
+        let input = "!!>=_.+-0-/_-test-T-123_beta1_-4a-6+-_p--1.00.02b_alpha3_pre_p4-r5:slot/_-+6-9=[test(+),test(-)]";
 
         let (_, atom) = atom(input).unwrap();
 
