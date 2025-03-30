@@ -15,6 +15,8 @@ pub struct Lookahead<F>(F);
 
 pub struct Search<F>(F);
 
+pub struct Uncut<F>(F);
+
 impl<I, O, E, F> Parser<I> for Debug<F>
 where
     I: Input + fmt::Debug,
@@ -74,6 +76,27 @@ where
     }
 }
 
+impl<I, E, F> Parser<I> for Uncut<F>
+where
+    I: Input,
+    E: ParseError<I>,
+    F: Parser<I, Error = E>,
+{
+    type Output = F::Output;
+    type Error = F::Error;
+
+    fn process<OM: nom::OutputMode>(
+        &mut self,
+        input: I,
+    ) -> nom::PResult<OM, I, Self::Output, Self::Error> {
+        match self.0.process::<OM>(input) {
+            Ok((rest, result)) => Ok((rest, result)),
+            Err(nom::Err::Failure(e)) => Err(nom::Err::Error(OM::Error::bind(|| e))),
+            e => e,
+        }
+    }
+}
+
 // not sure why we cant return impl Parser here
 pub fn debug<I, O, E, F>(parser: F) -> Debug<F>
 where
@@ -122,6 +145,15 @@ where
     F: Parser<I, Error = E>,
 {
     parser.map(|_| ())
+}
+
+pub fn uncut<I, E, F>(parser: F) -> impl Parser<I, Error = E>
+where
+    I: Input,
+    E: ParseError<I>,
+    F: Parser<I, Error = E>,
+{
+    Uncut(parser)
 }
 
 #[cfg(test)]
