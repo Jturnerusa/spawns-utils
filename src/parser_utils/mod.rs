@@ -1,4 +1,4 @@
-use core::{clone::Clone, fmt, unreachable};
+use core::{clone::Clone, fmt};
 
 use nom::{
     bytes::{complete::take_while1, take, take_while_m_n},
