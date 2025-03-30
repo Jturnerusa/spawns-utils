@@ -11,7 +11,7 @@ use nom::{
 
 use crate::{
     atom::{Atom, Category, VersionSuffix},
-    parser_utils::{lookahead, take_1_if},
+    parser_utils::{ignore, search, take_1_if},
     useflag::parsers::usedep,
     ParseResult,
 };
@@ -30,12 +30,17 @@ pub fn category(input: &str) -> ParseResult<Category> {
 }
 
 pub fn name(input: &str) -> ParseResult<Name> {
+    let version_ending = || preceded(tag("-"), version);
+
     recognize((
         take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
-        lookahead(alt((
-            eof,
-            recognize(preceded(tag("-"), version)),
-            recognize(not(take_1_if(|c: char| {
+        search(alt((
+            ignore(eof),
+            ignore((
+                version_ending(),
+                not(search((version_ending(), search(tag(":"))))),
+            )),
+            ignore(not(take_1_if(|c: char| {
                 c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+')
             }))),
         ))),
@@ -296,5 +301,14 @@ mod tests {
         let input = "!!>=cat/pkg-1.0.0v_alpha1_p20250326-r1:[!a(+),-b?,c(-)]";
 
         assert!(atom(input).is_err());
+    }
+
+    #[test]
+    fn test_cursed_atom() {
+        let input = "!!>=_.+-0-/_-test-T-123_beta1_-4a-6+-_p--1.00.02b_alpha3_pre_p4-r5:*/_-+6-9=[test(+),test(-)]";
+
+        let (_, atom) = atom(input).unwrap();
+
+        assert_eq!(atom.to_string(), input);
     }
 }
