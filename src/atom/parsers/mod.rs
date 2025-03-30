@@ -3,7 +3,7 @@ use core::iter::Iterator;
 use nom::{
     branch::alt,
     bytes::{complete::tag, take_while, take_while1},
-    combinator::{cut, eof, not, opt, peek, recognize},
+    combinator::{cut, eof, not, opt, peek, recognize, verify},
     multi::separated_list1,
     sequence::{delimited, preceded, terminated},
     Parser,
@@ -11,7 +11,7 @@ use nom::{
 
 use crate::{
     atom::{Atom, Category, VersionSuffix},
-    parser_utils::{ignore, search, take_1_if},
+    parser_utils::{debug, ignore, search, take_1_if},
     useflag::parsers::usedep,
     ParseResult,
 };
@@ -30,21 +30,29 @@ pub fn category(input: &str) -> ParseResult<Category> {
 }
 
 pub fn name(input: &str) -> ParseResult<Name> {
-    let version_ending = || preceded(tag("-"), version);
-
-    recognize((
-        take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
-        search(alt((
-            ignore(eof),
-            ignore((
-                version_ending(),
-                not(search((version_ending(), search(tag(":"))))),
-            )),
-            ignore(not(take_1_if(|c: char| {
-                c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+')
-            }))),
-        ))),
-    ))
+    verify(
+        recognize((
+            take_1_if(|c: char| c.is_ascii_alphanumeric() || matches!(c, '_')),
+            search(alt((
+                ignore(eof),
+                ignore((
+                    preceded(tag("-"), version),
+                    not(search((
+                        preceded(tag("-"), version),
+                        alt((eof, search(tag(":")))),
+                    ))),
+                )),
+                ignore(not(take_1_if(|c: char| {
+                    c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+')
+                }))),
+            ))),
+        )),
+        |result: &str| {
+            debug(search((preceded(tag("-"), version), eof)))
+                .parse_complete(result)
+                .is_err()
+        },
+    )
     .map(|result| Name(result.to_string()))
     .parse_complete(input)
 }
@@ -282,9 +290,7 @@ mod tests {
     fn test_name_with_version_ending() {
         let input = "foo-bar-1-1.0-r1";
 
-        let (_, name) = name.parse_complete(input).unwrap();
-
-        assert_eq!(name.get(), "foo-bar");
+        assert!(name.parse_complete(input).is_err());
     }
 
     #[test]
