@@ -115,6 +115,15 @@ where
     complete(lookahead(parser))
 }
 
+pub fn ignore<I, E, F>(parser: F) -> impl Parser<I, Output = (), Error = E>
+where
+    I: Input,
+    E: ParseError<I>,
+    F: Parser<I, Error = E>,
+{
+    parser.map(|_| ())
+}
+
 #[cfg(test)]
 mod tests {
 
